@@ -48,7 +48,8 @@
     "@radix-ui/react-slot": "latest",
     "class-variance-authority": "latest",
     "tailwind-merge": "latest",
-    "tailwindcss-animate": "latest"
+    "tailwindcss-animate": "latest",
+    "react-dropzone": "latest"
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
