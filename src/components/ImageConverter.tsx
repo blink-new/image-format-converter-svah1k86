@@ -19,12 +19,21 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from "@/components/ui/tooltip";
+import { X } from "lucide-react";
 
 const formatOptions = [
   { value: "jpeg", label: "JPEG - Best for photos" },
   { value: "png", label: "PNG - Best for graphics" },
   { value: "webp", label: "WebP - Modern format" },
 ];
+
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 export function ImageConverter() {
   const [files, setFiles] = useState<File[]>([]);
@@ -36,8 +45,12 @@ export function ImageConverter() {
   const [isConverting, setIsConverting] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFiles(acceptedFiles);
+    setFiles(prev => [...prev, ...acceptedFiles]);
   }, []);
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -75,6 +88,47 @@ export function ImageConverter() {
           )}
         </div>
       </div>
+
+      {files.length > 0 && (
+        <div className="bg-card rounded-lg p-4 space-y-3">
+          <div className="text-sm font-medium">Selected Files ({files.length})</div>
+          <div className="space-y-2">
+            {files.map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="flex items-center justify-between bg-muted/50 rounded-lg p-3 group"
+              >
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="flex-shrink-0">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="h-10 w-10 object-cover rounded"
+                      onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile(index);
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Remove file</span>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-lg p-6 space-y-6">
         <div className="space-y-4">
@@ -143,9 +197,6 @@ export function ImageConverter() {
 
         {files.length > 0 && (
           <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              {files.length} file(s) selected
-            </div>
             {isConverting && (
               <div className="space-y-2">
                 <Progress value={progress} />
