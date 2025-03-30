@@ -1,14 +1,16 @@
 
-import { ImageConverter } from './components/ImageConverter'
+import { ImageConverter } from "./components/ImageConverter";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 
-function App() {
+export default function App() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto py-8">
+      <Header />
+      <main className="container mx-auto px-4 py-12">
         <ImageConverter />
       </main>
+      <Footer />
     </div>
-  )
+  );
 }
-
-export default App
