@@ -3,7 +3,7 @@ import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "./ui/button";
 import { Progress } from "./ui/progress";
-import { Trash2 } from "lucide-react";
+import { Select } from "./ui/select";
 
 interface ImageFile extends File {
   preview?: string;
@@ -32,15 +32,6 @@ export function ImageConverter() {
       'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
     }
   });
-
-  const removeFile = (index: number) => {
-    setFiles((prevFiles) => {
-      const newFiles = [...prevFiles];
-      URL.revokeObjectURL(newFiles[index].preview as string);
-      newFiles.splice(index, 1);
-      return newFiles;
-    });
-  };
 
   const convertImage = async (file: ImageFile): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -126,25 +117,12 @@ export function ImageConverter() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
-      <div
-        {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
-      >
-        <input {...getInputProps()} />
-        {isDragActive ? (
-          <p>Drop the files here ...</p>
-        ) : (
-          <p>Drag & drop images here, or click to select files</p>
-        )}
-      </div>
-
-      <div className="flex gap-4 items-center">
+    <div className="max-w-2xl mx-auto p-8">
+      <div className="flex gap-4 mb-4">
         <select
           value={targetFormat}
           onChange={(e) => setTargetFormat(e.target.value)}
-          className="border rounded p-2"
+          className="px-3 py-2 border rounded-md text-base"
         >
           <option value="jpeg">JPEG</option>
           <option value="png">PNG</option>
@@ -154,36 +132,47 @@ export function ImageConverter() {
         <Button
           onClick={handleConversion}
           disabled={files.length === 0 || converting}
+          className="bg-gray-500 hover:bg-gray-600 text-white px-6"
         >
-          {converting ? "Converting..." : "Convert & Download"}
+          Convert & Download
         </Button>
       </div>
 
+      <div
+        {...getRootProps()}
+        className={`
+          border-2 border-dashed rounded-lg p-12
+          flex items-center justify-center
+          cursor-pointer transition-colors
+          ${isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"}
+          ${files.length > 0 ? "h-40" : "h-64"}
+        `}
+      >
+        <input {...getInputProps()} />
+        <p className="text-lg text-center">
+          Drag & drop images here, or click to select files
+        </p>
+      </div>
+
       {converting && (
-        <div className="space-y-2">
-          <Progress value={progress} />
-          <p className="text-sm text-gray-600 text-center">{Math.round(progress)}% complete</p>
+        <div className="mt-4">
+          <Progress value={progress} className="h-2" />
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {files.map((file, index) => (
-          <div key={file.name + index} className="relative group">
-            <img
-              src={file.preview}
-              alt={file.name}
-              className="w-full h-40 object-cover rounded-lg"
-            />
-            <button
-              onClick={() => removeFile(index)}
-              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <p className="text-sm text-gray-600 truncate mt-1">{file.name}</p>
-          </div>
-        ))}
-      </div>
+      {files.length > 0 && (
+        <div className="mt-4 grid grid-cols-4 gap-4">
+          {files.map((file, index) => (
+            <div key={file.name + index} className="aspect-square">
+              <img
+                src={file.preview}
+                alt={file.name}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
