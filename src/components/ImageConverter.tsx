@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -51,21 +51,54 @@ export function ImageConverter() {
   const [progress, setProgress] = useState(0);
   const [isConverting, setIsConverting] = useState(false);
 
+  // Log component mount and updates
+  useEffect(() => {
+    console.log("🔄 ImageConverter component mounted");
+    return () => {
+      console.log("🔚 ImageConverter component unmounted");
+      // Cleanup previews
+      files.forEach(file => {
+        if (file.preview) {
+          URL.revokeObjectURL(file.preview);
+          console.debug("🗑️ Cleaned up preview URL for", file.name);
+        }
+      });
+    };
+  }, []);
+
+  // Log state changes
+  useEffect(() => {
+    console.warn("📁 Files state updated:", files.map(f => ({ name: f.name, status: f.status })));
+  }, [files]);
+
+  useEffect(() => {
+    console.info("⚙️ Settings changed:", { format, quality, maxWidth, maxHeight });
+  }, [format, quality, maxWidth, maxHeight]);
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.map(file => 
-      Object.assign(file, {
+    console.log("📥 Files dropped:", acceptedFiles.map(f => f.name));
+    
+    if (acceptedFiles.some(file => file.size > 10 * 1024 * 1024)) {
+      console.warn("⚠️ Some files are larger than 10MB");
+    }
+
+    const newFiles = acceptedFiles.map(file => {
+      console.debug("🔍 Processing dropped file:", file.name, formatFileSize(file.size));
+      return Object.assign(file, {
         preview: URL.createObjectURL(file),
         status: 'pending'
-      })
-    );
+      });
+    });
     setFiles(prev => [...prev, ...newFiles]);
   }, []);
 
   const removeFile = (index: number) => {
+    console.info("🗑️ Removing file at index:", index);
     setFiles(prev => {
       const newFiles = [...prev];
       if (newFiles[index].preview) {
         URL.revokeObjectURL(newFiles[index].preview!);
+        console.debug("🧹 Cleaned up preview URL for removed file");
       }
       newFiles.splice(index, 1);
       return newFiles;
@@ -76,10 +109,34 @@ export function ImageConverter() {
     onDrop,
     accept: {
       "image/*": [".png", ".jpeg", ".jpg", ".webp"]
+    },
+    onDropRejected: (rejectedFiles) => {
+      console.error("❌ Files rejected:", rejectedFiles.map(f => ({
+        file: f.file.name,
+        errors: f.errors
+      })));
+    },
+    onDropAccepted: (files) => {
+      console.log("✅ Files accepted:", files.map(f => f.name));
+    },
+    onDragEnter: () => {
+      console.debug("🎯 Drag enter event");
+    },
+    onDragLeave: () => {
+      console.debug("↩️ Drag leave event");
     }
   });
 
   const handleConvert = async () => {
+    console.warn("🚀 Starting conversion process");
+    console.info("📊 Conversion settings:", {
+      format,
+      quality,
+      maxWidth,
+      maxHeight,
+      fileCount: files.length
+    });
+
     setIsConverting(true);
     setProgress(0);
 
@@ -88,13 +145,23 @@ export function ImageConverter() {
 
     // Simulate conversion for each file
     for (let i = 0; i < files.length; i++) {
+      console.debug(`⚙️ Converting file ${i + 1} of ${files.length}`);
       await new Promise(resolve => setTimeout(resolve, 500));
-      setFiles(prev => prev.map((file, index) => 
-        index === i ? { ...file, status: 'done' as const } : file
-      ));
-      setProgress((i + 1) * (100 / files.length));
+      
+      setFiles(prev => prev.map((file, index) => {
+        if (index === i) {
+          console.log(`✅ Completed conversion for ${file.name}`);
+          return { ...file, status: 'done' as const };
+        }
+        return file;
+      }));
+      
+      const newProgress = ((i + 1) * 100) / files.length;
+      console.debug(`📈 Progress updated: ${newProgress.toFixed(1)}%`);
+      setProgress(newProgress);
     }
 
+    console.warn("🎉 Conversion process completed");
     setIsConverting(false);
   };
 
@@ -107,6 +174,7 @@ export function ImageConverter() {
           isDragActive ? "border-primary bg-primary/10 scale-102" : "border-gray-300 hover:border-primary",
           "group"
         )}
+        onClick={() => console.info("🖱️ Dropzone clicked")}
       >
         <input {...getInputProps()} />
         <motion.div 
@@ -144,7 +212,13 @@ export function ImageConverter() {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    files.forEach(file => file.preview && URL.revokeObjectURL(file.preview));
+                    console.warn("🗑️ Clearing all files");
+                    files.forEach(file => {
+                      if (file.preview) {
+                        URL.revokeObjectURL(file.preview);
+                        console.debug("Cleaned up preview URL for", file.name);
+                      }
+                    });
                     setFiles([]);
                   }}
                 >
@@ -169,7 +243,10 @@ export function ImageConverter() {
                           alt={file.name}
                           className="h-12 w-12 object-cover rounded-md"
                           onLoad={() => {
-                            // Keep the preview URL since we're using it
+                            console.debug("🖼️ Preview loaded for", file.name);
+                          }}
+                          onError={() => {
+                            console.error("❌ Failed to load preview for", file.name);
                           }}
                         />
                         {file.status && (
@@ -220,13 +297,23 @@ export function ImageConverter() {
           <div className="grid gap-4">
             <div className="space-y-2">
               <Label>Output Format</Label>
-              <Select value={format} onValueChange={setFormat}>
+              <Select 
+                value={format} 
+                onValueChange={(value) => {
+                  console.info("🔄 Format changed to:", value);
+                  setFormat(value);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select format" />
                 </SelectTrigger>
                 <SelectContent>
                   {formatOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
+                    <SelectItem 
+                      key={option.value} 
+                      value={option.value}
+                      onClick={() => console.debug("Format option clicked:", option.value)}
+                    >
                       <div className="flex flex-col">
                         <span>{option.label}</span>
                         <span className="text-xs text-muted-foreground">{option.description}</span>
@@ -248,7 +335,10 @@ export function ImageConverter() {
                     <div className="relative pt-2">
                       <Slider
                         value={[quality]}
-                        onValueChange={([value]) => setQuality(value)}
+                        onValueChange={([value]) => {
+                          console.info("🎚️ Quality adjusted to:", value);
+                          setQuality(value);
+                        }}
                         min={1}
                         max={100}
                         step={1}
@@ -273,7 +363,15 @@ export function ImageConverter() {
                 <Input
                   type="number"
                   value={maxWidth}
-                  onChange={(e) => setMaxWidth(Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    console.info("📏 Max width changed to:", value);
+                    if (value < 1) {
+                      console.error("❌ Invalid width value:", value);
+                      return;
+                    }
+                    setMaxWidth(value);
+                  }}
                   min={1}
                 />
               </div>
@@ -282,7 +380,15 @@ export function ImageConverter() {
                 <Input
                   type="number"
                   value={maxHeight}
-                  onChange={(e) => setMaxHeight(Number(e.target.value))}
+                  onChange={(e) => {
+                    const value = Number(e.target.value);
+                    console.info("📏 Max height changed to:", value);
+                    if (value < 1) {
+                      console.error("❌ Invalid height value:", value);
+                      return;
+                    }
+                    setMaxHeight(value);
+                  }}
                   min={1}
                 />
               </div>
