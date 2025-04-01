@@ -51,12 +51,10 @@ export function ImageConverter() {
   const [progress, setProgress] = useState(0);
   const [isConverting, setIsConverting] = useState(false);
 
-  // Log component mount and updates
   useEffect(() => {
     console.log("🔄 ImageConverter component mounted");
     return () => {
       console.log("🔚 ImageConverter component unmounted");
-      // Cleanup previews
       files.forEach(file => {
         if (file.preview) {
           URL.revokeObjectURL(file.preview);
@@ -66,7 +64,6 @@ export function ImageConverter() {
     };
   }, []);
 
-  // Log state changes
   useEffect(() => {
     console.warn("📁 Files state updated:", files.map(f => ({ name: f.name, status: f.status })));
   }, [files]);
@@ -140,10 +137,8 @@ export function ImageConverter() {
     setIsConverting(true);
     setProgress(0);
 
-    // Update all files to converting status
     setFiles(prev => prev.map(file => ({ ...file, status: 'converting' as const })));
 
-    // Simulate conversion for each file
     for (let i = 0; i < files.length; i++) {
       console.debug(`⚙️ Converting file ${i + 1} of ${files.length}`);
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -300,7 +295,7 @@ export function ImageConverter() {
               <Select 
                 value={format} 
                 onValueChange={(value) => {
-                  console.info("🔄 Format changed to:", value);
+                  console.error("🔄 Format changed to:", value);
                   setFormat(value);
                 }}
               >
@@ -365,7 +360,7 @@ export function ImageConverter() {
                   value={maxWidth}
                   onChange={(e) => {
                     const value = Number(e.target.value);
-                    console.info("📏 Max width changed to:", value);
+                    console.warn("📏 Max width changed to:", value);
                     if (value < 1) {
                       console.error("❌ Invalid width value:", value);
                       return;
@@ -382,7 +377,7 @@ export function ImageConverter() {
                   value={maxHeight}
                   onChange={(e) => {
                     const value = Number(e.target.value);
-                    console.info("📏 Max height changed to:", value);
+                    console.warn("📏 Max height changed to:", value);
                     if (value < 1) {
                       console.error("❌ Invalid height value:", value);
                       return;
