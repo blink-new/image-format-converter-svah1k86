@@ -1,16 +1,24 @@
 
 import { ImageConverter } from "./components/ImageConverter";
-import { Header } from "./components/Header";
-import { Footer } from "./components/Footer";
 
-export default function App() {
+function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="container mx-auto px-4 py-12">
+    <div className="min-h-screen flex flex-col">
+      <main className="flex-1">
         <ImageConverter />
       </main>
-      <Footer />
+      <footer className="py-6 border-t">
+        <div className="container flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Built with ❤️ by Blink
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Version 1.0.0
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
+
+export default App;
