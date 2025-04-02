@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -122,156 +123,162 @@ export function ImageConverter() {
   }, []);
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
-      <div
-        {...getRootProps()}
-        className={cn(
-          "relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200",
-          isDragActive ? "border-primary bg-primary/10 scale-102" : "border-gray-300 hover:border-primary",
-          "group"
-        )}
-      >
-        <input {...getInputProps()} />
-        <div className="flex flex-col items-center gap-2">
-          <Upload className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
-          <div className="text-xl font-medium">Drop your images here</div>
-          <div className="text-sm text-muted-foreground">
-            or click to select files
-          </div>
-          <div className="text-xs text-muted-foreground mt-2">
-            Maximum file size: 10MB
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
+        <div className="flex justify-end">
+          <ThemeToggle />
+        </div>
+        
+        <div
+          {...getRootProps()}
+          className={cn(
+            "relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-200",
+            isDragActive ? "border-primary bg-primary/10 scale-102" : "border-muted hover:border-primary",
+            "group"
+          )}
+        >
+          <input {...getInputProps()} />
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
+            <div className="text-xl font-medium">Drop your images here</div>
+            <div className="text-sm text-muted-foreground">
+              or click to select files
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Maximum file size: 10MB
+            </div>
           </div>
         </div>
-      </div>
 
-      <AnimatePresence>
-        {files.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="bg-card rounded-xl p-4 space-y-3"
-          >
-            {files.map((file, index) => (
-              <div key={file.name} className="flex items-center gap-4 bg-background p-3 rounded-lg">
-                <div className="relative w-16 h-16 flex-shrink-0">
-                  <img
-                    src={file.preview}
-                    alt={file.name}
-                    className="w-full h-full object-cover rounded-md"
-                  />
+        <AnimatePresence>
+          {files.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-card rounded-xl p-4 space-y-3"
+            >
+              {files.map((file, index) => (
+                <div key={file.name} className="flex items-center gap-4 bg-background/50 p-3 rounded-lg border border-border">
+                  <div className="relative w-16 h-16 flex-shrink-0">
+                    <img
+                      src={file.preview}
+                      alt={file.name}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div className="truncate font-medium">{file.name}</div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeFile(index)}
+                        className="flex-shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {formatFileSize(file.size)}
+                      {file.outputSize && ` → ${file.outputSize}`}
+                    </div>
+                    <div className="mt-2">
+                      {file.status === 'pending' && (
+                        <div className="text-sm text-muted-foreground">Ready to process</div>
+                      )}
+                      {file.status === 'processing' && (
+                        <Progress value={file.progress} className="h-1" />
+                      )}
+                      {file.status === 'complete' && (
+                        <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>Complete</span>
+                        </div>
+                      )}
+                      {file.status === 'error' && (
+                        <div className="flex items-center gap-1 text-sm text-destructive">
+                          <AlertTriangle className="w-4 h-4" />
+                          <span>{file.error || 'Error processing file'}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="truncate font-medium">{file.name}</div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="bg-card rounded-xl p-6 space-y-6 border border-border">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Output Format</Label>
+              <Select value={format} onValueChange={setFormat}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {formatOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Quality ({quality}%)</Label>
+              <Slider
+                value={[quality]}
+                onValueChange={([value]) => setQuality(value)}
+                min={1}
+                max={100}
+                step={1}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Max Width (px)</Label>
+              <Input
+                type="number"
+                value={maxWidth}
+                onChange={(e) => setMaxWidth(e.target.value)}
+                placeholder="e.g. 1920"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Max Height (px)</Label>
+              <Input
+                type="number"
+                value={maxHeight}
+                onChange={(e) => setMaxHeight(e.target.value)}
+                placeholder="e.g. 1080"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeFile(index)}
-                      className="flex-shrink-0"
+                      onClick={processFiles}
+                      disabled={files.length === 0 || files.every(f => f.status === 'complete')}
                     >
-                      <X className="w-4 h-4" />
+                      Process Images
                     </Button>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatFileSize(file.size)}
-                    {file.outputSize && ` → ${file.outputSize}`}
-                  </div>
-                  <div className="mt-2">
-                    {file.status === 'pending' && (
-                      <div className="text-sm text-muted-foreground">Ready to process</div>
-                    )}
-                    {file.status === 'processing' && (
-                      <Progress value={file.progress} className="h-1" />
-                    )}
-                    {file.status === 'complete' && (
-                      <div className="flex items-center gap-1 text-sm text-green-600">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Complete</span>
-                      </div>
-                    )}
-                    {file.status === 'error' && (
-                      <div className="flex items-center gap-1 text-sm text-destructive">
-                        <AlertTriangle className="w-4 h-4" />
-                        <span>{file.error || 'Error processing file'}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="bg-card rounded-xl p-6 space-y-6">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Output Format</Label>
-            <Select value={format} onValueChange={setFormat}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {formatOptions.map(option => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Convert all pending images with current settings</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-          
-          <div className="space-y-2">
-            <Label>Quality ({quality}%)</Label>
-            <Slider
-              value={[quality]}
-              onValueChange={([value]) => setQuality(value)}
-              min={1}
-              max={100}
-              step={1}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Max Width (px)</Label>
-            <Input
-              type="number"
-              value={maxWidth}
-              onChange={(e) => setMaxWidth(e.target.value)}
-              placeholder="e.g. 1920"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Max Height (px)</Label>
-            <Input
-              type="number"
-              value={maxHeight}
-              onChange={(e) => setMaxHeight(e.target.value)}
-              placeholder="e.g. 1080"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-3">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <Button
-                    onClick={processFiles}
-                    disabled={files.length === 0 || files.every(f => f.status === 'complete')}
-                  >
-                    Process Images
-                  </Button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Convert all pending images with current settings</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
     </div>
