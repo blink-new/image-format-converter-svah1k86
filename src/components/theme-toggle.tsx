@@ -1,9 +1,7 @@
 
-"use client"
-
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import { useTheme } from "@/lib/themes"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
 
   return (
     <DropdownMenu>
