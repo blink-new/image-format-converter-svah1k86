@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Select,
   SelectContent,
@@ -125,10 +124,6 @@ export function ImageConverter() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="w-full max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
-        
         <div
           {...getRootProps()}
           className={cn(
